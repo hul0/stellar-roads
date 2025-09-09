@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellar Roads - AI Roadmap Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leader-line-new@1.1.9/leader-line.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.3/dist/panzoom.min.js"></script>
+
+    <style>
+        :root {
+            --bg-light: #f1f5f9;
+            --bg-dark: #020617;
+            --card-light: #ffffff;
+            --card-dark: #1e293b;
+            --text-light: #1e293b;
+            --text-dark: #e2e8f0;
+            --border-light: #e2e8f0;
+            --border-dark: #334155;
+            --accent: #4f46e5;
+        }
+
+        html.dark {
+            color-scheme: dark;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .light .glassmorphism {
+             background: rgba(255, 255, 255, 0.6);
+             border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        /* Leader-line styles */
+        .leader-line {
+            transition: all 0.3s ease-in-out;
+        }
+
+        .node {
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+        }
+        .node:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .dark .node:hover {
+             box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2), 0 4px 6px -2px rgba(79, 70, 229, 0.1);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .status-completed { background-color: #22c55e; }
+        .status-in-progress { background-color: #3b82f6; }
+        .status-planned { background-color: #a855f7; }
+        .status-on-hold { background-color: #f97316; }
+
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 antialiased">
+    <div id="app" class="flex flex-col h-screen overflow-hidden">
+        <!-- Header -->
+        <header class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm z-20">
+            <div class="flex items-center gap-3">
+                 <svg class="w-8 h-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.82m5.84-2.56a12.022 12.022 0 01-12.022 0A12.022 12.022 0 0115.59 14.37zM9.75 14.37a6 6 0 01-5.84-7.38v4.82m5.84 2.56a12.022 12.022 0 0012.022 0A12.022 12.022 0 009.75 14.37z" />
+                </svg>
+                <h1 class="text-xl font-bold text-slate-900 dark:text-white">Stellar Roads</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    <svg id="theme-icon-light" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg id="theme-icon-dark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <main class="flex flex-1 overflow-hidden">
+            <!-- Sidebar for JSON input -->
+            <aside class="w-1/3 max-w-md p-4 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto">
+                <h2 class="text-lg font-semibold mb-2">Roadmap JSON</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Paste your roadmap configuration below. You can use the sample data to get started.</p>
+                <textarea id="json-input" class="w-full h-2/3 flex-grow p-3 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm font-mono" spellcheck="false"></textarea>
+                <div class="flex items-center gap-2 mt-4">
+                    <button id="render-btn" class="flex-1 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-900">
+                        Generate Roadmap
+                    </button>
+                    <button id="sample-data-btn" class="text-indigo-600 dark:text-indigo-400 font-semibold py-2 px-4 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/50 transition-colors">
+                        Sample
+                    </button>
+                     <button id="copy-json-btn" class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Copy JSON">
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25h-1.5a2.25 2.25 0 01-2.25-2.25v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
+                    </button>
+                </div>
+                <div id="json-error" class="mt-3 text-red-500 text-sm"></div>
+
+                <!-- Export Controls -->
+                <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+                    <h3 class="text-lg font-semibold mb-4">Export Options</h3>
+                    <div class="grid grid-cols-1 gap-3">
+                         <button id="export-png-btn" class="export-btn">Download as PNG</button>
+                         <button id="export-svg-btn" class="export-btn">Download as SVG</button>
+                         <button id="export-pdf-btn" class="export-btn">Download as PDF</button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Roadmap Canvas -->
+            <div id="canvas-container" class="flex-1 bg-grid-slate-200/50 dark:bg-grid-slate-700/20 relative overflow-hidden">
+                <div id="canvas" class="w-full h-full">
+                    <!-- Roadmap will be rendered here -->
+                </div>
+                <!-- Zoom Controls -->
+                <div class="absolute bottom-4 right-4 flex items-center gap-2 p-1 rounded-lg glassmorphism">
+                     <button id="zoom-in-btn" class="zoom-btn">+</button>
+                     <button id="zoom-out-btn" class="zoom-btn">-</button>
+                     <button id="zoom-reset-btn" class="zoom-btn">
+                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10.5a.5.5 0 01.5-.5h3a.5.5 0 010 1h-3a.5.5 0 01-.5-.5z" clip-rule="evenodd" fill-rule="evenodd"/></svg>
+                     </button>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white py-2 px-5 rounded-lg shadow-xl translate-y-16 opacity-0 transition-all duration-300">
+            <p id="toast-message"></p>
+        </div>
+
+    </div>
+
+    <style>
+        .export-btn {
+            @apply w-full text-left bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium;
+        }
+        .zoom-btn {
+            @apply w-8 h-8 flex items-center justify-center font-bold text-lg rounded-md bg-white/50 dark:bg-slate-900/50 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors;
+        }
+        .bg-grid-slate-200\/50 {
+            background-image: linear-gradient(var(--border-light) 1px, transparent 1px), linear-gradient(to right, var(--border-light) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        .dark .bg-grid-slate-700\/20 {
+            background-image: linear-gradient(var(--border-dark) 1px, transparent 1px), linear-gradient(to right, var(--border-dark) 1px, transparent 1px);
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIconLight = document.getElementById('theme-icon-light');
+            const themeIconDark = document.getElementById('theme-icon-dark');
+            const jsonInput = document.getElementById('json-input');
+            const renderBtn = document.getElementById('render-btn');
+            const sampleDataBtn = document.getElementById('sample-data-btn');
+            const copyJsonBtn = document.getElementById('copy-json-btn');
+            const jsonError = document.getElementById('json-error');
+            const canvas = document.getElementById('canvas');
+            const canvasContainer = document.getElementById('canvas-container');
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            const exportPngBtn = document.getElementById('export-png-btn');
+            const exportSvgBtn = document.getElementById('export-svg-btn');
+            const exportPdfBtn = document.getElementById('export-pdf-btn');
+
+            const zoomInBtn = document.getElementById('zoom-in-btn');
+            const zoomOutBtn = document.getElementById('zoom-out-btn');
+            const zoomResetBtn = document.getElementById('zoom-reset-btn');
+
+            let lines = [];
+            let panzoomInstance;
+
+            // --- Theme Manager ---
+            const applyTheme = (isDark) => {
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    themeIconLight.classList.remove('hidden');
+                    themeIconDark.classList.add('hidden');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    themeIconLight.classList.add('hidden');
+                    themeIconDark.classList.remove('hidden');
+                }
+                 updateLines();
+            };
+
+            themeToggle.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                applyTheme(isDark);
+            });
+
+            // --- Initial Setup ---
+            const initialTheme = localStorage.getItem('theme') === 'dark';
+            applyTheme(initialTheme);
+            
+            // --- Sample Data ---
+            const sampleJSON = {
+              "title": "Frontend Development Roadmap 2025",
+              "theme": "linear",
+              "nodes": [
+                { "id": "html_css", "title": "HTML & CSS", "description": "Fundamentals of web structure and styling.", "status": "completed", "level": 0 },
+                { "id": "js_basics", "title": "JavaScript Basics", "description": "Core language features, DOM manipulation.", "status": "completed", "level": 1 },
+                { "id": "git", "title": "Version Control (Git)", "description": "Tracking changes and collaborating with teams.", "status": "completed", "level": 1 },
+                { "id": "framework", "title": "Choose a Framework", "description": "React, Vue, or Angular for building complex UIs.", "status": "in-progress", "level": 2 },
+                { "id": "react", "title": "React.js", "description": "Component-based architecture and state management.", "status": "in-progress", "level": 3 },
+                { "id": "vue", "title": "Vue.js", "description": "Approachable, performant, and versatile framework.", "status": "planned", "level": 3 },
+                { "id": "styling", "title": "Advanced CSS", "description": "CSS-in-JS, TailwindCSS, SASS.", "status": "in-progress", "level": 4 },
+                { "id": "testing", "title": "Testing", "description": "Jest, React Testing Library for robust apps.", "status": "planned", "level": 5 },
+                { "id": "typescript", "title": "TypeScript", "description": "Adding static types to JavaScript.", "status": "planned", "level": 5 },
+                { "id": "deployment", "title": "Deployment & CI/CD", "description": "Automating builds and deploying to production.", "status": "planned", "level": 6 }
+              ],
+              "dependencies": [
+                { "from": "html_css", "to": "js_basics" },
+                { "from": "js_basics", "to": "framework" },
+                { "from": "js_basics", "to": "git" },
+                { "from": "framework", "to": "react" },
+                { "from": "framework", "to": "vue" },
+                { "from": "react", "to": "styling" },
+                { "from": "react", "to": "testing" },
+                { "from": "styling", "to": "deployment" },
+                { "from": "testing", "to": "typescript" }
+              ]
+            };
+            jsonInput.value = JSON.stringify(sampleJSON, null, 2);
+
+
+            // --- Toast Notification ---
+            function showToast(message) {
+                toastMessage.textContent = message;
+                toast.classList.remove('translate-y-16', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-16', 'opacity-0');
+                    toast.classList.remove('translate-y-0', 'opacity-100');
+                }, 3000);
+            }
+
+            // --- Roadmap Rendering ---
+            const renderRoadmap = () => {
+                jsonError.textContent = '';
+                canvas.innerHTML = '';
+                lines.forEach(line => line.remove());
+                lines = [];
+
+                let data;
+                try {
+                    data = JSON.parse(jsonInput.value);
+                } catch (e) {
+                    jsonError.textContent = 'Invalid JSON format.';
+                    return;
+                }
+                
+                if (!data.nodes || !data.dependencies) {
+                     jsonError.textContent = 'JSON must contain "nodes" and "dependencies" arrays.';
+                     return;
+                }
+
+                // Group nodes by level
+                const levels = {};
+                data.nodes.forEach(node => {
+                    if (!levels[node.level]) {
+                        levels[node.level] = [];
+                    }
+                    levels[node.level].push(node);
+                });
+
+                // Render nodes
+                Object.keys(levels).sort((a,b) => a-b).forEach((level, levelIndex) => {
+                    const levelContainer = document.createElement('div');
+                    levelContainer.className = 'flex justify-center items-start gap-8 p-10';
+                    levelContainer.style.animationDelay = `${levelIndex * 100}ms`;
+                    levelContainer.classList.add('fade-in');
+
+                    levels[level].forEach(nodeData => {
+                        const nodeEl = document.createElement('div');
+                        nodeEl.id = nodeData.id;
+                        nodeEl.className = 'node w-64 p-5 rounded-xl shadow-lg cursor-pointer flex flex-col gap-2 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark';
+                        
+                        const statusColor = `status-${nodeData.status || 'planned'}`;
+                        nodeEl.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-bold text-text-light dark:text-text-dark">${nodeData.title}</h3>
+                                <div class="w-3 h-3 rounded-full ${statusColor}" title="Status: ${nodeData.status}"></div>
+                            </div>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">${nodeData.description}</p>
+                        `;
+                        levelContainer.appendChild(nodeEl);
+                    });
+                    canvas.appendChild(levelContainer);
+                });
+                
+                // Set up panzoom after nodes are in the DOM
+                setTimeout(() => {
+                    if (panzoomInstance) {
+                        panzoomInstance.dispose();
+                    }
+                    panzoomInstance = panzoom(canvas, {
+                        maxZoom: 2,
+                        minZoom: 0.2,
+                        filterKey: () => true, // Allow panning on any element
+                    });
+                    
+                    canvasContainer.addEventListener('wheel', panzoomInstance.zoomWithWheel);
+
+                    // Render dependencies (lines)
+                    setTimeout(drawLines, 50); // a small delay to ensure rendering
+                }, 100);
+
+            };
+
+            function drawLines() {
+                lines.forEach(line => line.remove());
+                lines = [];
+                let data;
+                try {
+                    data = JSON.parse(jsonInput.value);
+                } catch (e) { return; }
+
+                if (!data.dependencies) return;
+
+                data.dependencies.forEach(dep => {
+                    const fromEl = document.getElementById(dep.from);
+                    const toEl = document.getElementById(dep.to);
+
+                    if (fromEl && toEl) {
+                        try {
+                            const line = new LeaderLine(
+                                fromEl,
+                                toEl,
+                                {
+                                    color: document.documentElement.classList.contains('dark') ? 'rgba(100, 116, 139, 0.7)' : 'rgba(148, 163, 184, 0.7)',
+                                    size: 3,
+                                    path: 'fluid',
+                                    startSocket: 'bottom',
+                                    endSocket: 'top',
+                                    startPlug: 'disc',
+                                    endPlug: 'arrow1',
+                                    dash: { animation: true },
+                                    gradient: true,
+                                }
+                            );
+                            lines.push(line);
+                        } catch(e) {
+                            console.error("Could not draw line:", e);
+                        }
+                    }
+                });
+            }
+
+            function updateLines() {
+                lines.forEach(line => {
+                    line.color = document.documentElement.classList.contains('dark') ? 'rgba(100, 116, 139, 0.7)' : 'rgba(148, 163, 184, 0.7)';
+                    line.position();
+                });
+            }
+            
+            // --- Event Listeners ---
+            renderBtn.addEventListener('click', renderRoadmap);
+            sampleDataBtn.addEventListener('click', () => {
+                jsonInput.value = JSON.stringify(sampleJSON, null, 2);
+                renderRoadmap();
+                showToast('Sample data loaded!');
+            });
+            copyJsonBtn.addEventListener('click', () => {
+                jsonInput.select();
+                document.execCommand('copy');
+                showToast('JSON copied to clipboard!');
+            });
+
+            // Panzoom listener to update lines on pan/zoom
+            if (canvas) {
+                canvas.addEventListener('pan', updateLines);
+                canvas.addEventListener('zoom', updateLines);
+            }
+            window.addEventListener('resize', updateLines);
+
+            // Zoom controls
+            zoomInBtn.addEventListener('click', () => panzoomInstance?.zoomIn());
+            zoomOutBtn.addEventListener('click', () => panzoomInstance?.zoomOut());
+            zoomResetBtn.addEventListener('click', () => panzoomInstance?.moveTo(0, 0) || panzoomInstance?.zoomAbs(0, 0, 1));
+
+            // --- Export Functionality ---
+            const exportSetup = (isExporting = true) => {
+                 panzoomInstance?.moveTo(0, 0);
+                 panzoomInstance?.zoomAbs(0, 0, 1);
+                 canvas.style.transform = ''; // Reset transform for clean capture
+                 canvas.style.width = isExporting ? 'max-content' : '100%';
+                 canvas.style.height = isExporting ? 'max-content' : '100%';
+                 updateLines();
+            };
+
+            exportPngBtn.addEventListener('click', () => {
+                exportSetup();
+                setTimeout(() => { // allow DOM to update
+                    html2canvas(canvas, {
+                        backgroundColor: document.documentElement.classList.contains('dark') ? '#020617' : '#f1f5f9',
+                        scale: 2 // Higher resolution
+                    }).then(canvasImage => {
+                        const link = document.createElement('a');
+                        link.download = 'roadmap.png';
+                        link.href = canvasImage.toDataURL('image/png');
+                        link.click();
+                        exportSetup(false);
+                    });
+                }, 200);
+            });
+
+            exportPdfBtn.addEventListener('click', async () => {
+                 exportSetup();
+                 setTimeout(async () => {
+                    const { jsPDF } = window.jspdf;
+                    const canvasImage = await html2canvas(canvas, {
+                        backgroundColor: document.documentElement.classList.contains('dark') ? '#020617' : '#f1f5f9',
+                        scale: 2,
+                        windowWidth: canvas.scrollWidth,
+                        windowHeight: canvas.scrollHeight
+                    });
+                    
+                    const imgData = canvasImage.toDataURL('image/png');
+                    const imgWidth = 210; // A4 width in mm
+                    const pageHeight = 295; // A4 height in mm
+                    const imgHeight = canvasImage.height * imgWidth / canvasImage.width;
+                    let heightLeft = imgHeight;
+
+                    const doc = new jsPDF('p', 'mm', 'a4');
+                    let position = 0;
+
+                    doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        doc.addPage();
+                        doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    doc.save('roadmap.pdf');
+                    exportSetup(false);
+                 }, 200);
+            });
+
+            exportSvgBtn.addEventListener('click', () => {
+                exportSetup();
+                const svgContainer = document.createElement('div');
+                svgContainer.appendChild(canvas.cloneNode(true));
+                
+                const linesSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                linesSvg.setAttribute('width', canvas.scrollWidth);
+                linesSvg.setAttribute('height', canvas.scrollHeight);
+                linesSvg.style.position = 'absolute';
+                linesSvg.style.top = 0;
+                linesSvg.style.left = 0;
+                linesSvg.style.zIndex = -1;
+
+                document.querySelectorAll('.leader-line').forEach(lineSvg => {
+                    linesSvg.appendChild(lineSvg.cloneNode(true));
+                });
+                svgContainer.prepend(linesSvg);
+                
+                const style = document.createElement('style');
+                style.textContent = `
+                    .node { background-color: ${document.documentElement.classList.contains('dark') ? '#1e293b': '#fff'}; border: 1px solid ${document.documentElement.classList.contains('dark') ? '#334155': '#e2e8f0'}; color: ${document.documentElement.classList.contains('dark') ? '#e2e8f0': '#1e293b'}; }
+                    h3 { color: ${document.documentElement.classList.contains('dark') ? '#e2e8f0': '#1e293b'}; }
+                    p { color: ${document.documentElement.classList.contains('dark') ? '#94a3b8': '#64748b'}; }
+                    .status-completed { background-color: #22c55e; }
+                    .status-in-progress { background-color: #3b82f6; }
+                    .status-planned { background-color: #a855f7; }
+                    .status-on-hold { background-color: #f97316; }
+                `;
+                svgContainer.prepend(style);
+
+
+                const fullHtml = svgContainer.innerHTML;
+                const blob = new Blob([
+                    `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.scrollWidth}" height="${canvas.scrollHeight}">
+                        <foreignObject width="100%" height="100%">
+                            <div xmlns="http://www.w3.org/1999/xhtml">
+                                ${fullHtml}
+                            </div>
+                        </foreignObject>
+                    </svg>`
+                ], { type: 'image/svg+xml;charset=utf-8' });
+
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'roadmap.svg';
+                link.click();
+                URL.revokeObjectURL(url);
+                exportSetup(false);
+            });
+
+            // Initial render
+            renderRoadmap();
+        });
+    </script>
+</body>
+</html>
