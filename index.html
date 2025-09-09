@@ -75,12 +75,21 @@
         .status-planned { background-color: #a855f7; }
         .status-on-hold { background-color: #f97316; }
 
+        /* Grid background styles */
+        .bg-grid {
+            background-image: linear-gradient(var(--border-light) 1px, transparent 1px), linear-gradient(to right, var(--border-light) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        .dark .bg-grid {
+            background-image: linear-gradient(var(--border-dark) 1px, transparent 1px), linear-gradient(to right, var(--border-dark) 1px, transparent 1px);
+        }
+
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 antialiased">
     <div id="app" class="flex flex-col h-screen overflow-hidden">
         <!-- Header -->
-        <header class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm z-20">
+        <header class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm z-20 shrink-0">
             <div class="flex items-center gap-3">
                  <svg class="w-8 h-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.82m5.84-2.56a12.022 12.022 0 01-12.022 0A12.022 12.022 0 0115.59 14.37zM9.75 14.37a6 6 0 01-5.84-7.38v4.82m5.84 2.56a12.022 12.022 0 0012.022 0A12.022 12.022 0 009.75 14.37z" />
@@ -126,43 +135,36 @@
                     <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
                         <h3 class="text-lg font-semibold mb-4">Export Options</h3>
                         <div class="grid grid-cols-1 gap-3">
-                             <button id="export-png-btn" class="export-btn">Download as PNG</button>
-                             <button id="export-svg-btn" class="export-btn">Download as SVG</button>
-                             <button id="export-pdf-btn" class="export-btn">Download as PDF</button>
+                             <button id="export-png-btn" class="w-full text-left bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium">Download as PNG</button>
+                             <button id="export-svg-btn" class="w-full text-left bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium">Download as SVG</button>
+                             <button id="export-pdf-btn" class="w-full text-left bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium">Download as PDF</button>
                         </div>
                     </div>
                 </div>
             </aside>
 
             <!-- Roadmap Canvas -->
-            <div id="canvas-container" class="flex-1 bg-grid-slate-200/50 dark:bg-grid-slate-700/20 relative overflow-hidden h-full">
-                     </button>
+            <div id="canvas-container" class="flex-1 bg-grid relative overflow-hidden h-full">
+                <!-- This is the main canvas where the roadmap will be rendered -->
+                <div id="canvas" class="w-full h-full"></div>
+
+                <!-- Zoom Controls -->
+                <div class="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
+                    <button id="zoom-in-btn" title="Zoom In" class="w-8 h-8 flex items-center justify-center font-bold text-lg rounded-md bg-white/50 dark:bg-slate-900/50 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors backdrop-blur-sm border border-slate-200 dark:border-slate-700">+</button>
+                    <button id="zoom-out-btn" title="Zoom Out" class="w-8 h-8 flex items-center justify-center font-bold text-lg rounded-md bg-white/50 dark:bg-slate-900/50 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors backdrop-blur-sm border border-slate-200 dark:border-slate-700">-</button>
+                    <button id="zoom-reset-btn" title="Reset Zoom" class="w-8 h-8 flex items-center justify-center rounded-md bg-white/50 dark:bg-slate-900/50 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors backdrop-blur-sm border border-slate-200 dark:border-slate-700">
+                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10v6m0 0v6m0-6h6m-6 0H4" /></svg>
+                    </button>
                 </div>
             </div>
         </main>
         
         <!-- Toast Notification -->
-        <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white py-2 px-5 rounded-lg shadow-xl translate-y-16 opacity-0 transition-all duration-300">
+        <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white py-2 px-5 rounded-lg shadow-xl translate-y-16 opacity-0 transition-all duration-300 z-30">
             <p id="toast-message"></p>
         </div>
 
     </div>
-
-    <style>
-        .export-btn {
-            @apply w-full text-left bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium;
-        }
-        .zoom-btn {
-            @apply w-8 h-8 flex items-center justify-center font-bold text-lg rounded-md bg-white/50 dark:bg-slate-900/50 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors;
-        }
-        .bg-grid-slate-200\/50 {
-            background-image: linear-gradient(var(--border-light) 1px, transparent 1px), linear-gradient(to right, var(--border-light) 1px, transparent 1px);
-            background-size: 30px 30px;
-        }
-        .dark .bg-grid-slate-700\/20 {
-            background-image: linear-gradient(var(--border-dark) 1px, transparent 1px), linear-gradient(to right, var(--border-dark) 1px, transparent 1px);
-        }
-    </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -232,7 +234,14 @@
             
             // --- Sidebar Toggle for Mobile ---
             sidebarToggle.addEventListener('click', () => {
-                sidebarContent.classList.toggle('hidden');
+                const isHidden = sidebarContent.classList.toggle('hidden');
+                // Adjust parent layout
+                const aside = sidebarContent.closest('aside');
+                if (isHidden) {
+                    aside.classList.add('md:w-16'); // A collapsed width
+                } else {
+                    aside.classList.remove('md:w-16');
+                }
                 setTimeout(updateLines, 300); // Update lines after animation
             });
             
@@ -289,7 +298,7 @@
                 try {
                     data = JSON.parse(jsonInput.value);
                 } catch (e) {
-                    jsonError.textContent = 'Invalid JSON format.';
+                    jsonError.textContent = 'Invalid JSON format: ' + e.message;
                     return;
                 }
                 
@@ -317,12 +326,13 @@
                     levels[level].forEach(nodeData => {
                         const nodeEl = document.createElement('div');
                         nodeEl.id = nodeData.id;
-                        nodeEl.className = 'node w-full max-w-xs sm:w-64 p-5 rounded-xl shadow-lg cursor-pointer flex flex-col gap-2 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark';
+                        // Using variables for colors defined in :root
+                        nodeEl.className = 'node w-full max-w-xs sm:w-64 p-5 rounded-xl shadow-lg cursor-pointer flex flex-col gap-2 bg-[--card-light] dark:bg-[--card-dark] border border-[--border-light] dark:border-[--border-dark]';
                         
                         const statusColor = `status-${nodeData.status || 'planned'}`;
                         nodeEl.innerHTML = `
                             <div class="flex items-center justify-between">
-                                <h3 class="font-bold text-text-light dark:text-text-dark">${nodeData.title}</h3>
+                                <h3 class="font-bold text-[--text-light] dark:text-[--text-dark]">${nodeData.title}</h3>
                                 <div class="w-3 h-3 rounded-full ${statusColor}" title="Status: ${nodeData.status}"></div>
                             </div>
                             <p class="text-sm text-slate-500 dark:text-slate-400">${nodeData.description}</p>
@@ -344,6 +354,10 @@
                     });
                     
                     canvasContainer.addEventListener('wheel', panzoomInstance.zoomWithWheel);
+                    
+                    panzoomInstance.on('pan', debounce(updateLines, 50));
+                    panzoomInstance.on('zoom', debounce(updateLines, 50));
+
 
                     // Render dependencies (lines)
                     setTimeout(drawLines, 50); // a small delay to ensure rendering
@@ -392,8 +406,13 @@
 
             function updateLines() {
                 lines.forEach(line => {
-                    line.color = document.documentElement.classList.contains('dark') ? 'rgba(100, 116, 139, 0.7)' : 'rgba(148, 163, 184, 0.7)';
-                    line.position();
+                    try {
+                         line.color = document.documentElement.classList.contains('dark') ? 'rgba(100, 116, 139, 0.7)' : 'rgba(148, 163, 184, 0.7)';
+                         line.position();
+                    } catch (e) {
+                        // It's possible for a line to become invalid if nodes are removed
+                        // In a more complex app, we'd remove this specific line from the array
+                    }
                 });
             }
             
@@ -410,17 +429,15 @@
                 showToast('JSON copied to clipboard!');
             });
 
-            // Panzoom listener to update lines on pan/zoom
-            if (canvas) {
-                canvas.addEventListener('pan', updateLines);
-                canvas.addEventListener('zoom', updateLines);
-            }
             window.addEventListener('resize', debounce(updateLines, 150));
 
             // Zoom controls
-            zoomInBtn.addEventListener('click', () => panzoomInstance?.zoomIn());
-            zoomOutBtn.addEventListener('click', () => panzoomInstance?.zoomOut());
-            zoomResetBtn.addEventListener('click', () => panzoomInstance?.moveTo(0, 0) || panzoomInstance?.zoomAbs(0, 0, 1));
+            zoomInBtn.addEventListener('click', () => panzoomInstance?.smoothZoom(0.5, 0.5, 1.25));
+            zoomOutBtn.addEventListener('click', () => panzoomInstance?.smoothZoom(0.5, 0.5, 0.8));
+            zoomResetBtn.addEventListener('click', () => {
+                panzoomInstance?.smoothMoveTo(0, 0);
+                panzoomInstance?.smoothZoom(0, 0, 1);
+            });
 
             // --- Export Functionality ---
             const exportSetup = (isExporting = true) => {
@@ -429,10 +446,12 @@
                  canvas.style.transform = ''; // Reset transform for clean capture
                  canvas.style.width = isExporting ? 'max-content' : '100%';
                  canvas.style.height = isExporting ? 'max-content' : '100%';
-                 updateLines();
+                 // This ensures lines are redrawn correctly before capture
+                 setTimeout(updateLines, 50); 
             };
 
             exportPngBtn.addEventListener('click', () => {
+                showToast('Generating PNG...');
                 exportSetup();
                 setTimeout(() => { // allow DOM to update
                     html2canvas(canvas, {
@@ -444,78 +463,84 @@
                         link.href = canvasImage.toDataURL('image/png');
                         link.click();
                         exportSetup(false);
+                    }).catch(err => {
+                        showToast('Error exporting PNG.');
+                        console.error(err);
+                        exportSetup(false);
                     });
                 }, 200);
             });
 
             exportPdfBtn.addEventListener('click', async () => {
+                showToast('Generating PDF...');
                  exportSetup();
                  setTimeout(async () => {
-                    const { jsPDF } = window.jspdf;
-                    const canvasImage = await html2canvas(canvas, {
-                        backgroundColor: document.documentElement.classList.contains('dark') ? '#020617' : '#f1f5f9',
-                        scale: 2,
-                        windowWidth: canvas.scrollWidth,
-                        windowHeight: canvas.scrollHeight
-                    });
-                    
-                    const imgData = canvasImage.toDataURL('image/png');
-                    const imgWidth = 210; // A4 width in mm
-                    const pageHeight = 295; // A4 height in mm
-                    const imgHeight = canvasImage.height * imgWidth / canvasImage.width;
-                    let heightLeft = imgHeight;
+                    try {
+                        const { jsPDF } = window.jspdf;
+                        const canvasImage = await html2canvas(canvas, {
+                            backgroundColor: document.documentElement.classList.contains('dark') ? '#020617' : '#f1f5f9',
+                            scale: 2,
+                            windowWidth: canvas.scrollWidth,
+                            windowHeight: canvas.scrollHeight
+                        });
+                        
+                        const imgData = canvasImage.toDataURL('image/png');
+                        const imgWidth = 210; // A4 width in mm
+                        const pageHeight = 295; // A4 height in mm
+                        const imgHeight = canvasImage.height * imgWidth / canvasImage.width;
+                        let heightLeft = imgHeight;
 
-                    const doc = new jsPDF('p', 'mm', 'a4');
-                    let position = 0;
+                        const doc = new jsPDF('p', 'mm', 'a4');
+                        let position = 0;
 
-                    doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-
-                    while (heightLeft >= 0) {
-                        position = heightLeft - imgHeight;
-                        doc.addPage();
                         doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
                         heightLeft -= pageHeight;
+
+                        while (heightLeft >= 0) {
+                            position = heightLeft - imgHeight;
+                            doc.addPage();
+                            doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                            heightLeft -= pageHeight;
+                        }
+                        doc.save('roadmap.pdf');
+                    } catch(err) {
+                        showToast('Error exporting PDF.');
+                        console.error(err);
+                    } finally {
+                        exportSetup(false);
                     }
-                    doc.save('roadmap.pdf');
-                    exportSetup(false);
                  }, 200);
             });
 
             exportSvgBtn.addEventListener('click', () => {
-                exportSetup();
-                const svgContainer = document.createElement('div');
-                svgContainer.appendChild(canvas.cloneNode(true));
+                showToast('SVG export is experimental.');
+                // Note: This is a complex operation and might not be perfect,
+                // especially with external fonts and complex CSS.
+                // It works by embedding the HTML content inside an SVG <foreignObject>.
                 
-                const linesSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                linesSvg.setAttribute('width', canvas.scrollWidth);
-                linesSvg.setAttribute('height', canvas.scrollHeight);
-                linesSvg.style.position = 'absolute';
-                linesSvg.style.top = 0;
-                linesSvg.style.left = 0;
-                linesSvg.style.zIndex = -1;
+                const allCSS = Array.from(document.styleSheets)
+                  .map(sheet => {
+                    try {
+                      return Array.from(sheet.cssRules)
+                        .map(rule => rule.cssText)
+                        .join('');
+                    } catch (e) {
+                      // CORS issues can prevent reading external stylesheets
+                      return '';
+                    }
+                  })
+                  .join('');
 
-                document.querySelectorAll('.leader-line').forEach(lineSvg => {
-                    linesSvg.appendChild(lineSvg.cloneNode(true));
-                });
-                svgContainer.prepend(linesSvg);
-                
-                const style = document.createElement('style');
-                style.textContent = `
-                    .node { background-color: ${document.documentElement.classList.contains('dark') ? '#1e293b': '#fff'}; border: 1px solid ${document.documentElement.classList.contains('dark') ? '#334155': '#e2e8f0'}; color: ${document.documentElement.classList.contains('dark') ? '#e2e8f0': '#1e293b'}; }
-                    h3 { color: ${document.documentElement.classList.contains('dark') ? '#e2e8f0': '#1e293b'}; }
-                    p { color: ${document.documentElement.classList.contains('dark') ? '#94a3b8': '#64748b'}; }
-                    .status-completed { background-color: #22c55e; }
-                    .status-in-progress { background-color: #3b82f6; }
-                    .status-planned { background-color: #a855f7; }
-                    .status-on-hold { background-color: #f97316; }
-                `;
-                svgContainer.prepend(style);
+                const canvasClone = canvas.cloneNode(true);
+                const fullHtml = canvasClone.outerHTML;
 
-
-                const fullHtml = svgContainer.innerHTML;
                 const blob = new Blob([
                     `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.scrollWidth}" height="${canvas.scrollHeight}">
+                        <style>
+                            ${allCSS}
+                            /* Add specific overrides for SVG context if needed */
+                        </style>
+                        ${Array.from(document.querySelectorAll('.leader-line')).map(el => el.outerHTML).join('')}
                         <foreignObject width="100%" height="100%">
                             <div xmlns="http://www.w3.org/1999/xhtml">
                                 ${fullHtml}
@@ -530,7 +555,6 @@
                 link.download = 'roadmap.svg';
                 link.click();
                 URL.revokeObjectURL(url);
-                exportSetup(false);
             });
 
             // Initial render
@@ -539,4 +563,3 @@
     </script>
 </body>
 </html>
-
