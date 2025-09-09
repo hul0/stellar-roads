@@ -6,7 +6,6 @@
     <title>Stellar Roads - AI Roadmap Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Configure Tailwind CSS to use the 'class' strategy for dark mode
         tailwind.config = {
             darkMode: 'class',
         }
@@ -30,22 +29,26 @@
         body {
             font-family: 'Inter', sans-serif;
             transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
         }
 
         /* Leader-line styles */
         .leader-line {
             transition: all 0.3s ease-in-out;
+            z-index: 1;
         }
 
         .node {
             transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+            position: relative;
+            z-index: 2;
         }
         .node:hover {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         .dark .node:hover {
-             box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2), 0 4px 6px -2px rgba(79, 70, 229, 0.1);
+             box-shadow: 0 8px 12px -3px rgba(79, 70, 229, 0.2), 0 4px 6px -2px rgba(79, 70, 229, 0.1);
         }
 
         .fade-in {
@@ -70,50 +73,137 @@
         .dark .bg-grid {
             background-image: linear-gradient(var(--border-dark) 1px, transparent 1px), linear-gradient(to right, var(--border-dark) 1px, transparent 1px);
         }
+
+        /* Mobile responsive improvements */
+        @media (max-width: 768px) {
+            .mobile-sidebar {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100vh;
+                z-index: 50;
+                transition: left 0.3s ease;
+                overflow-y: auto;
+            }
+            
+            .mobile-sidebar.open {
+                left: 0;
+            }
+            
+            .mobile-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 40;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s ease;
+            }
+            
+            .mobile-overlay.active {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .node {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 auto;
+            }
+            
+            .canvas-mobile {
+                padding: 1rem;
+            }
+        }
+
+        /* Export overlay */
+        .export-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .export-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 antialiased">
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="mobile-overlay"></div>
+    
+    <!-- Export Overlay -->
+    <div id="export-overlay" class="export-overlay">
+        <div class="bg-white dark:bg-slate-800 rounded-lg p-6 text-center">
+            <div class="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p class="text-lg font-medium">Generating export...</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Please wait while we process your roadmap</p>
+        </div>
+    </div>
+
     <div id="app" class="flex flex-col h-screen overflow-hidden">
         <!-- Header -->
-        <header class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm z-20 shrink-0">
-            <div class="flex items-center gap-3 overflow-hidden">
-                 <svg class="w-8 h-8 text-indigo-500 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <header class="flex items-center justify-between p-3 sm:p-4 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm z-20 shrink-0">
+            <div class="flex items-center gap-2 sm:gap-3 overflow-hidden min-w-0">
+                 <svg class="w-6 h-6 sm:w-8 sm:h-8 text-indigo-500 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.82m5.84-2.56a12.022 12.022 0 01-12.022 0A12.022 12.022 0 0115.59 14.37zM9.75 14.37a6 6 0 01-5.84-7.38v4.82m5.84 2.56a12.022 12.022 0 0012.022 0A12.022 12.022 0 009.75 14.37z" />
                 </svg>
-                <h1 class="text-xl font-bold text-slate-900 dark:text-white truncate">
-                    Stellar Roads<span id="roadmap-title" class="text-indigo-600 dark:text-indigo-400 font-medium text-lg ml-2"></span>
+                <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate">
+                    Stellar Roads<span id="roadmap-title" class="text-indigo-600 dark:text-indigo-400 font-medium text-sm sm:text-lg ml-1 sm:ml-2"></span>
                 </h1>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                    <svg id="theme-icon-light" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <svg id="theme-icon-dark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <svg id="theme-icon-light" class="w-4 h-4 sm:w-5 sm:h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg id="theme-icon-dark" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+                <button id="sidebar-toggle" class="md:hidden p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    <svg id="sidebar-icon-open" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg>
+                    <svg id="sidebar-icon-close" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                 </button>
             </div>
         </header>
 
-        <main class="flex flex-col md:flex-row flex-1 overflow-hidden">
+        <main class="flex flex-1 overflow-hidden relative">
             <!-- Sidebar for JSON input -->
-            <aside class="w-full md:w-1/3 md:max-w-md p-4 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto">
-                <div class="flex items-center justify-between mb-2">
+            <aside id="sidebar" class="w-full md:w-80 lg:w-96 p-4 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col overflow-y-auto mobile-sidebar hidden md:flex">
+                <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold">Roadmap Configuration</h2>
-                    <button id="sidebar-toggle" class="md:hidden p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
-                        <svg id="sidebar-icon-open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
-                        </svg>
-                        <svg id="sidebar-icon-close" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <button id="sidebar-close" class="md:hidden p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Paste your roadmap JSON below, or use the sample data to start.</p>
-                <div id="sidebar-content">
-                    <textarea id="json-input" class="w-full h-48 md:h-2/3 flex-grow p-3 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm font-mono" spellcheck="false"></textarea>
-                    <div class="flex items-center gap-2 mt-4">
-                        <button id="render-btn" class="flex-1 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-900">
+                
+                <div class="flex flex-col flex-1 min-h-0">
+                    <textarea id="json-input" class="w-full flex-1 min-h-[200px] p-3 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm font-mono resize-none" spellcheck="false"></textarea>
+                    
+                    <div class="flex flex-col sm:flex-row items-center gap-2 mt-4">
+                        <button id="render-btn" class="w-full sm:flex-1 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-900">
                             Generate Roadmap
                         </button>
-                        <button id="sample-data-btn" class="text-indigo-600 dark:text-indigo-400 font-semibold py-2 px-4 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/50 transition-colors">
+                        <button id="sample-data-btn" class="w-full sm:w-auto text-indigo-600 dark:text-indigo-400 font-semibold py-2 px-4 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/50 transition-colors">
                             Sample
                         </button>
                          <button id="copy-json-btn" class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Copy JSON">
@@ -126,9 +216,14 @@
                     <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
                         <h3 class="text-lg font-semibold mb-4">Export Options</h3>
                         <div class="grid grid-cols-1 gap-3">
-                             <button id="export-png-btn" class="w-full text-left bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium">Download as PNG</button>
-                             <button id="export-svg-btn" class="w-full text-left bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium">Download as SVG</button>
-                             <button id="export-pdf-btn" class="w-full text-left bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium">Download as PDF</button>
+                             <button id="export-png-btn" class="w-full text-left bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-4 py-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium flex items-center gap-3">
+                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                Download as PNG
+                             </button>
+                             <button id="export-pdf-btn" class="w-full text-left bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-4 py-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-sm font-medium flex items-center gap-3">
+                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                Download as PDF
+                             </button>
                         </div>
                     </div>
                 </div>
@@ -136,24 +231,23 @@
 
             <!-- Roadmap Canvas -->
             <div id="canvas-container" class="flex-1 bg-grid relative overflow-hidden h-full">
-                <div id="canvas" class="w-full h-full cursor-grab"></div>
+                <div id="canvas" class="w-full h-full cursor-grab canvas-mobile"></div>
 
                 <!-- Zoom Controls -->
                 <div class="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
-                    <button id="zoom-in-btn" title="Zoom In" class="w-8 h-8 flex items-center justify-center font-bold text-lg rounded-md bg-white/50 dark:bg-slate-900/50 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors backdrop-blur-sm border border-slate-200 dark:border-slate-700">+</button>
-                    <button id="zoom-out-btn" title="Zoom Out" class="w-8 h-8 flex items-center justify-center font-bold text-lg rounded-md bg-white/50 dark:bg-slate-900/50 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors backdrop-blur-sm border border-slate-200 dark:border-slate-700">-</button>
-                    <button id="zoom-reset-btn" title="Reset Zoom" class="w-8 h-8 flex items-center justify-center rounded-md bg-white/50 dark:bg-slate-900/50 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors backdrop-blur-sm border border-slate-200 dark:border-slate-700">
-                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10v6m0 0v6m0-6h6m-6 0H4" /></svg>
+                    <button id="zoom-in-btn" title="Zoom In" class="w-10 h-10 flex items-center justify-center font-bold text-lg rounded-lg bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 transition-colors backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-lg">+</button>
+                    <button id="zoom-out-btn" title="Zoom Out" class="w-10 h-10 flex items-center justify-center font-bold text-lg rounded-lg bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 transition-colors backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-lg">-</button>
+                    <button id="zoom-reset-btn" title="Reset Zoom" class="w-10 h-10 flex items-center justify-center rounded-lg bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-800 transition-colors backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-lg">
+                         <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10v6m0 0v6m0-6h6m-6 0H4" /></svg>
                     </button>
                 </div>
             </div>
         </main>
         
         <!-- Toast Notification -->
-        <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white py-2 px-5 rounded-lg shadow-xl translate-y-20 opacity-0 transition-all duration-300 z-30">
-            <p id="toast-message"></p>
+        <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white py-3 px-6 rounded-lg shadow-xl translate-y-20 opacity-0 transition-all duration-300 z-30 max-w-xs sm:max-w-sm text-center">
+            <p id="toast-message" class="text-sm"></p>
         </div>
-
     </div>
 
     <script>
@@ -172,12 +266,14 @@
             const canvasContainer = $('canvas-container');
             const toast = $('toast');
             const toastMessage = $('toast-message');
+            const sidebar = $('sidebar');
             const sidebarToggle = $('sidebar-toggle');
-            const sidebarContent = $('sidebar-content');
+            const sidebarClose = $('sidebar-close');
             const sidebarIconOpen = $('sidebar-icon-open');
             const sidebarIconClose = $('sidebar-icon-close');
+            const mobileOverlay = $('mobile-overlay');
+            const exportOverlay = $('export-overlay');
             const exportPngBtn = $('export-png-btn');
-            const exportSvgBtn = $('export-svg-btn');
             const exportPdfBtn = $('export-pdf-btn');
             const zoomInBtn = $('zoom-in-btn');
             const zoomOutBtn = $('zoom-out-btn');
@@ -186,6 +282,7 @@
 
             let lines = [];
             let panzoomInstance;
+            let currentData = null;
 
             // --- Utility ---
             const debounce = (func, wait) => {
@@ -195,6 +292,8 @@
                     timeout = setTimeout(() => func.apply(this, args), wait);
                 };
             };
+
+            const isMobile = () => window.innerWidth < 768;
 
             // --- Theme Manager ---
             const applyTheme = (isDark) => {
@@ -213,14 +312,50 @@
             // --- Initial Setup ---
             applyTheme(localStorage.getItem('theme') === 'dark');
             
-            // --- Sidebar Toggle for Mobile ---
+            // --- Mobile Sidebar Management ---
+            const openSidebar = () => {
+                sidebar.classList.add('open');
+                sidebar.classList.remove('hidden');
+                mobileOverlay.classList.add('active');
+                sidebarIconOpen.classList.add('hidden');
+                sidebarIconClose.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            };
+
+            const closeSidebar = () => {
+                sidebar.classList.remove('open');
+                if (isMobile()) {
+                    sidebar.classList.add('hidden');
+                }
+                mobileOverlay.classList.remove('active');
+                sidebarIconOpen.classList.remove('hidden');
+                sidebarIconClose.classList.add('hidden');
+                document.body.style.overflow = '';
+                setTimeout(updateLines, 300);
+            };
+
             sidebarToggle.addEventListener('click', () => {
-                sidebarContent.classList.toggle('hidden');
-                sidebarIconOpen.classList.toggle('hidden');
-                sidebarIconClose.classList.toggle('hidden');
-                // Allow layout to reflow before redrawing lines
-                setTimeout(updateLines, 300); 
+                if (sidebar.classList.contains('open')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
             });
+
+            sidebarClose.addEventListener('click', closeSidebar);
+            mobileOverlay.addEventListener('click', closeSidebar);
+
+            // Handle window resize
+            window.addEventListener('resize', debounce(() => {
+                if (!isMobile()) {
+                    sidebar.classList.remove('hidden', 'open');
+                    mobileOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                } else if (!sidebar.classList.contains('open')) {
+                    sidebar.classList.add('hidden');
+                }
+                updateLines();
+            }, 150));
             
             // --- Sample Data ---
             const sampleJSON = {
@@ -262,8 +397,8 @@
             };
 
             const displayCanvasMessage = (message) => {
-                canvas.innerHTML = `<div class="w-full h-full flex items-center justify-center p-8">
-                    <p class="text-slate-500 dark:text-slate-400 text-center">${message}</p>
+                canvas.innerHTML = `<div class="w-full h-full flex items-center justify-center p-4 sm:p-8">
+                    <p class="text-slate-500 dark:text-slate-400 text-center text-sm sm:text-base max-w-md">${message}</p>
                 </div>`;
             }
 
@@ -297,212 +432,418 @@
 
                 if (data.nodes.length === 0) {
                     displayCanvasMessage('Your roadmap is empty. Add some nodes to the JSON configuration.');
+                    return;
                 }
                 
-                roadmapTitle.textContent = `: ${data.title || ''}`;
+                currentData = data;
+                roadmapTitle.textContent = data.title ? `: ${data.title}` : '';
 
                 const levels = data.nodes.reduce((acc, node) => {
                     (acc[node.level] = acc[node.level] || []).push(node);
                     return acc;
                 }, {});
 
-                Object.keys(levels).sort((a,b) => a-b).forEach((level, levelIndex) => {
+                const sortedLevels = Object.keys(levels).sort((a,b) => a-b);
+                
+                sortedLevels.forEach((level, levelIndex) => {
                     const levelContainer = document.createElement('div');
-                    levelContainer.className = 'flex flex-col md:flex-row justify-center items-center md:items-start gap-8 p-6 md:p-10';
+                    levelContainer.className = 'flex flex-col items-center gap-4 sm:gap-6 md:gap-8 p-4 sm:p-6 md:p-10';
                     levelContainer.style.animationDelay = `${levelIndex * 100}ms`;
                     levelContainer.classList.add('fade-in');
+
+                    // Add level indicator for better mobile experience
+                    if (levels[level].length > 1 || sortedLevels.length > 3) {
+                        const levelIndicator = document.createElement('div');
+                        levelIndicator.className = 'text-xs sm:text-sm font-medium text-slate-400 dark:text-slate-500 mb-2';
+                        levelIndicator.textContent = `Level ${level}`;
+                        levelContainer.appendChild(levelIndicator);
+                    }
+
+                    const nodesContainer = document.createElement('div');
+                    nodesContainer.className = isMobile() ? 
+                        'flex flex-col items-center gap-4 w-full' : 
+                        'flex flex-row justify-center items-start gap-6 lg:gap-8 flex-wrap';
 
                     levels[level].forEach(nodeData => {
                         const nodeEl = document.createElement('div');
                         nodeEl.id = nodeData.id;
-                        nodeEl.className = 'node w-full max-w-xs sm:w-64 p-5 rounded-xl shadow-lg cursor-pointer flex flex-col gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700';
+                        nodeEl.className = isMobile() ? 
+                            'node w-full max-w-sm p-4 rounded-xl shadow-lg cursor-pointer flex flex-col gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700' :
+                            'node w-64 lg:w-72 p-5 rounded-xl shadow-lg cursor-pointer flex flex-col gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700';
                         
                         const statusColor = `status-${nodeData.status || 'planned'}`;
+                        const statusLabels = {
+                            'completed': 'Completed',
+                            'in-progress': 'In Progress', 
+                            'planned': 'Planned',
+                            'on-hold': 'On Hold'
+                        };
+                        
                         nodeEl.innerHTML = `
-                            <div class="flex items-center justify-between">
-                                <h3 class="font-bold text-slate-800 dark:text-slate-100">${nodeData.title}</h3>
-                                <div class="w-3 h-3 rounded-full ${statusColor}" title="Status: ${nodeData.status}"></div>
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base flex-1">${nodeData.title}</h3>
+                                <div class="w-3 h-3 rounded-full ${statusColor} shrink-0 mt-1" title="Status: ${statusLabels[nodeData.status] || 'Planned'}"></div>
                             </div>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">${nodeData.description}</p>
+                            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">${nodeData.description}</p>
                         `;
-                        levelContainer.appendChild(nodeEl);
+                        nodesContainer.appendChild(nodeEl);
                     });
+                    
+                    levelContainer.appendChild(nodesContainer);
                     canvas.appendChild(levelContainer);
                 });
                 
                 requestAnimationFrame(() => {
                     if (panzoomInstance) panzoomInstance.dispose();
-                    panzoomInstance = panzoom(canvas, { maxZoom: 2, minZoom: 0.2, filterKey: () => true });
+                    panzoomInstance = panzoom(canvas, { 
+                        maxZoom: 3, 
+                        minZoom: 0.1, 
+                        filterKey: () => true,
+                        smoothScroll: false,
+                        zoomDoubleClickSpeed: 1
+                    });
                     canvasContainer.addEventListener('wheel', panzoomInstance.zoomWithWheel);
-                    panzoomInstance.on('pan', debounce(updateLines, 50));
-                    panzoomInstance.on('zoom', debounce(updateLines, 50));
-                    requestAnimationFrame(drawLines);
+                    panzoomInstance.on('pan', debounce(updateLines, 30));
+                    panzoomInstance.on('zoom', debounce(updateLines, 30));
+                    
+                    // Delay line drawing to ensure DOM is fully rendered
+                    setTimeout(drawLines, 100);
                 });
             };
 
             function drawLines() {
                 lines.forEach(line => line.remove());
                 lines = [];
-                let data;
-                try { data = JSON.parse(jsonInput.value); } catch (e) { return; }
-                if (!data.dependencies) return;
+                
+                if (!currentData || !currentData.dependencies) return;
 
                 const isDark = document.documentElement.classList.contains('dark');
-                data.dependencies.forEach(dep => {
+                const lineColor = isDark ? 'rgba(100, 116, 139, 0.8)' : 'rgba(148, 163, 184, 0.8)';
+                
+                currentData.dependencies.forEach(dep => {
                     const fromEl = $(dep.from);
                     const toEl = $(dep.to);
                     if (fromEl && toEl) {
                         try {
-                            lines.push(new LeaderLine(
-                                fromEl, toEl, {
-                                    color: isDark ? 'rgba(100, 116, 139, 0.7)' : 'rgba(148, 163, 184, 0.7)',
-                                    size: 3, path: 'fluid', startSocket: 'bottom', endSocket: 'top',
-                                    startPlug: 'disc', endPlug: 'arrow1', dash: { animation: true }, gradient: true,
+                            const line = new LeaderLine(fromEl, toEl, {
+                                color: lineColor,
+                                size: isMobile() ? 2 : 3,
+                                path: 'fluid',
+                                startSocket: 'bottom',
+                                endSocket: 'top',
+                                startPlug: 'disc',
+                                endPlug: 'arrow1',
+                                dash: { animation: true },
+                                gradient: true,
+                                dropShadow: {
+                                    dx: 0,
+                                    dy: 2,
+                                    blur: 4,
+                                    color: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)'
                                 }
-                            ));
-                        } catch(e) { console.error("Could not draw line:", e); }
+                            });
+                            lines.push(line);
+                        } catch(e) { 
+                            console.error("Could not draw line:", e); 
+                        }
                     }
                 });
             }
 
             function updateLines() {
                 const isDark = document.documentElement.classList.contains('dark');
+                const lineColor = isDark ? 'rgba(100, 116, 139, 0.8)' : 'rgba(148, 163, 184, 0.8)';
+                
                 lines.forEach(line => {
                     try {
-                         line.color = isDark ? 'rgba(100, 116, 139, 0.7)' : 'rgba(148, 163, 184, 0.7)';
+                         line.color = lineColor;
+                         line.size = isMobile() ? 2 : 3;
                          line.position();
-                    } catch (e) { /* Line might be invalid if nodes were removed */ }
+                    } catch (e) { 
+                        // Line might be invalid if nodes were removed
+                    }
                 });
             }
             
             // --- Event Listeners ---
-            renderBtn.addEventListener('click', renderRoadmap);
+            renderBtn.addEventListener('click', () => {
+                renderRoadmap();
+                if (isMobile()) {
+                    closeSidebar();
+                }
+            });
+            
             sampleDataBtn.addEventListener('click', () => {
                 jsonInput.value = JSON.stringify(sampleJSON, null, 2);
                 renderRoadmap();
                 showToast('Sample data loaded!');
+                if (isMobile()) {
+                    closeSidebar();
+                }
             });
+            
             copyJsonBtn.addEventListener('click', () => {
                 navigator.clipboard.writeText(jsonInput.value).then(() => {
                      showToast('JSON copied to clipboard!');
+                }).catch(() => {
+                    // Fallback for older browsers
+                    jsonInput.select();
+                    document.execCommand('copy');
+                    showToast('JSON copied to clipboard!');
                 });
             });
-
-            window.addEventListener('resize', debounce(updateLines, 150));
 
             // Zoom controls
-            zoomInBtn.addEventListener('click', () => panzoomInstance?.smoothZoom(canvas.clientWidth / 2, canvas.clientHeight / 2, 1.25));
-            zoomOutBtn.addEventListener('click', () => panzoomInstance?.smoothZoom(canvas.clientWidth / 2, canvas.clientHeight / 2, 0.8));
-            zoomResetBtn.addEventListener('click', () => {
-                if (!panzoomInstance) return;
-                panzoomInstance.moveTo(0,0);
-                panzoomInstance.zoomAbs(0,0,1);
-            });
-
-            // --- Export Functionality ---
-            const exportSetup = (isExporting = true) => {
-                 if(panzoomInstance) {
-                    panzoomInstance.moveTo(0, 0);
-                    panzoomInstance.zoomAbs(0, 0, 1);
-                 }
-                 canvas.style.cursor = isExporting ? 'progress' : 'grab';
-                 // A short delay to allow panzoom to reset before capture
-                 return new Promise(resolve => setTimeout(resolve, 50));
-            };
-
-            exportPngBtn.addEventListener('click', () => {
-                showToast('Generating PNG...');
-                exportSetup().then(() => {
-                    html2canvas(canvas, {
-                        backgroundColor: document.documentElement.classList.contains('dark') ? '#020617' : '#f1f5f9',
-                        scale: 2
-                    }).then(canvasImage => {
-                        const link = document.createElement('a');
-                        link.download = 'roadmap.png';
-                        link.href = canvasImage.toDataURL('image/png');
-                        link.click();
-                    }).catch(err => {
-                        showToast('Error exporting PNG.');
-                        console.error(err);
-                    }).finally(() => exportSetup(false));
-                });
-            });
-
-            exportPdfBtn.addEventListener('click', () => {
-                showToast('Generating PDF...');
-                 exportSetup().then(async () => {
-                    try {
-                        const { jsPDF } = window.jspdf;
-                        const canvasImage = await html2canvas(canvas, {
-                            backgroundColor: document.documentElement.classList.contains('dark') ? '#020617' : '#f1f5f9',
-                            scale: 2, windowWidth: canvas.scrollWidth, windowHeight: canvas.scrollHeight
-                        });
-                        const imgData = canvasImage.toDataURL('image/png');
-                        const imgWidth = 210; // A4 width
-                        const pageHeight = 295; // A4 height
-                        const imgHeight = canvasImage.height * imgWidth / canvasImage.width;
-                        let heightLeft = imgHeight;
-                        const doc = new jsPDF('p', 'mm', 'a4');
-                        let position = 0;
-                        doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                        heightLeft -= pageHeight;
-                        while (heightLeft >= 0) {
-                            position = heightLeft - imgHeight;
-                            doc.addPage();
-                            doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                            heightLeft -= pageHeight;
-                        }
-                        doc.save('roadmap.pdf');
-                    } catch(err) {
-                        showToast('Error exporting PDF.');
-                        console.error(err);
-                    } finally {
-                        exportSetup(false);
-                    }
-                 });
-            });
-
-            exportSvgBtn.addEventListener('click', () => {
-                showToast('Generating SVG...');
-                try {
-                    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                    svg.setAttribute('xmlns', "http://www.w3.org/2000/svg");
-                    svg.setAttribute('width', canvas.scrollWidth);
-                    svg.setAttribute('height', canvas.scrollHeight);
-
-                    // Inline all styles
-                    const style = document.createElement('style');
-                    style.textContent = Array.from(document.styleSheets).map(s => {
-                        try { return Array.from(s.cssRules).map(r => r.cssText).join('\n') } 
-                        catch (e) { return '' }
-                    }).join('\n');
-                    svg.appendChild(style);
-
-                    // Add lines to SVG
-                    document.querySelectorAll('.leader-line').forEach(line => svg.appendChild(line.cloneNode(true)));
-                    
-                    // Add HTML content
-                    const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-                    foreignObject.setAttribute('width', '100%');
-                    foreignObject.setAttribute('height', '100%');
-                    const clonedCanvas = canvas.cloneNode(true);
-                    clonedCanvas.style.cursor = 'default';
-                    foreignObject.appendChild(clonedCanvas);
-                    svg.appendChild(foreignObject);
-                    
-                    const svgData = new XMLSerializer().serializeToString(svg);
-                    const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'roadmap.svg';
-                    link.click();
-                    URL.revokeObjectURL(url);
-                } catch(err) {
-                    showToast('Error exporting SVG.');
-                    console.error(err);
+            zoomInBtn.addEventListener('click', () => {
+                if (panzoomInstance) {
+                    panzoomInstance.smoothZoom(canvas.clientWidth / 2, canvas.clientHeight / 2, 1.2);
                 }
             });
+            
+            zoomOutBtn.addEventListener('click', () => {
+                if (panzoomInstance) {
+                    panzoomInstance.smoothZoom(canvas.clientWidth / 2, canvas.clientHeight / 2, 0.8);
+                }
+            });
+            
+            zoomResetBtn.addEventListener('click', () => {
+                if (!panzoomInstance) return;
+                panzoomInstance.moveTo(0, 0);
+                panzoomInstance.zoomAbs(0, 0, 1);
+                setTimeout(updateLines, 100);
+            });
+
+            // --- Enhanced Export Functionality ---
+            const showExportOverlay = () => {
+                exportOverlay.classList.add('active');
+            };
+
+            const hideExportOverlay = () => {
+                exportOverlay.classList.remove('active');
+            };
+
+            const prepareCanvasForExport = async () => {
+                // Reset zoom and position
+                if (panzoomInstance) {
+                    panzoomInstance.moveTo(0, 0);
+                    panzoomInstance.zoomAbs(0, 0, 1);
+                }
+                
+                // Temporarily disable hover effects and transitions
+                const nodes = document.querySelectorAll('.node');
+                nodes.forEach(node => {
+                    node.style.transition = 'none';
+                    node.style.transform = 'none';
+                });
+                
+                // Wait for positioning to settle
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                // Force line redraw
+                updateLines();
+                await new Promise(resolve => setTimeout(resolve, 100));
+            };
+
+            const restoreCanvasAfterExport = () => {
+                // Re-enable transitions
+                const nodes = document.querySelectorAll('.node');
+                nodes.forEach(node => {
+                    node.style.transition = '';
+                    node.style.transform = '';
+                });
+            };
+
+            exportPngBtn.addEventListener('click', async () => {
+                if (!currentData || !currentData.nodes.length) {
+                    showToast('Please generate a roadmap first!');
+                    return;
+                }
+
+                showExportOverlay();
+                
+                try {
+                    await prepareCanvasForExport();
+                    
+                    // Create a temporary container that includes both canvas and lines
+                    const tempContainer = document.createElement('div');
+                    tempContainer.style.position = 'fixed';
+                    tempContainer.style.top = '-9999px';
+                    tempContainer.style.left = '-9999px';
+                    tempContainer.style.width = canvas.scrollWidth + 'px';
+                    tempContainer.style.height = canvas.scrollHeight + 'px';
+                    tempContainer.style.backgroundColor = document.documentElement.classList.contains('dark') ? '#020617' : '#f1f5f9';
+                    
+                    // Clone canvas content
+                    const canvasClone = canvas.cloneNode(true);
+                    tempContainer.appendChild(canvasClone);
+                    
+                    // Add SVG overlay for lines
+                    const svgOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svgOverlay.style.position = 'absolute';
+                    svgOverlay.style.top = '0';
+                    svgOverlay.style.left = '0';
+                    svgOverlay.style.width = '100%';
+                    svgOverlay.style.height = '100%';
+                    svgOverlay.style.pointerEvents = 'none';
+                    svgOverlay.style.zIndex = '1';
+                    
+                    // Draw lines as SVG paths
+                    lines.forEach(line => {
+                        try {
+                            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            const lineElement = line.element;
+                            if (lineElement) {
+                                const pathData = lineElement.getAttribute('d');
+                                if (pathData) {
+                                    path.setAttribute('d', pathData);
+                                    path.setAttribute('stroke', line.color);
+                                    path.setAttribute('stroke-width', line.size);
+                                    path.setAttribute('fill', 'none');
+                                    path.setAttribute('stroke-linecap', 'round');
+                                    path.setAttribute('stroke-linejoin', 'round');
+                                    svgOverlay.appendChild(path);
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Could not export line:', e);
+                        }
+                    });
+                    
+                    tempContainer.appendChild(svgOverlay);
+                    document.body.appendChild(tempContainer);
+                    
+                    const canvasImage = await html2canvas(tempContainer, {
+                        backgroundColor: document.documentElement.classList.contains('dark') ? '#020617' : '#f1f5f9',
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        foreignObjectRendering: true,
+                        width: tempContainer.offsetWidth,
+                        height: tempContainer.offsetHeight
+                    });
+                    
+                    document.body.removeChild(tempContainer);
+                    
+                    const link = document.createElement('a');
+                    link.download = `${currentData.title || 'roadmap'}.png`.replace(/[^a-z0-9]/gi, '_');
+                    link.href = canvasImage.toDataURL('image/png');
+                    link.click();
+                    
+                    showToast('PNG exported successfully!');
+                } catch (err) {
+                    showToast('Error exporting PNG. Please try again.');
+                    console.error('Export error:', err);
+                } finally {
+                    hideExportOverlay();
+                    restoreCanvasAfterExport();
+                }
+            });
+
+            exportPdfBtn.addEventListener('click', async () => {
+                if (!currentData || !currentData.nodes.length) {
+                    showToast('Please generate a roadmap first!');
+                    return;
+                }
+
+                showExportOverlay();
+                
+                try {
+                    await prepareCanvasForExport();
+                    
+                    const { jsPDF } = window.jspdf;
+                    
+                    // Create temporary container for export
+                    const tempContainer = document.createElement('div');
+                    tempContainer.style.position = 'fixed';
+                    tempContainer.style.top = '-9999px';
+                    tempContainer.style.left = '-9999px';
+                    tempContainer.style.width = canvas.scrollWidth + 'px';
+                    tempContainer.style.height = canvas.scrollHeight + 'px';
+                    tempContainer.style.backgroundColor = document.documentElement.classList.contains('dark') ? '#020617' : '#f1f5f9';
+                    
+                    const canvasClone = canvas.cloneNode(true);
+                    tempContainer.appendChild(canvasClone);
+                    
+                    // Add SVG overlay for lines
+                    const svgOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svgOverlay.style.position = 'absolute';
+                    svgOverlay.style.top = '0';
+                    svgOverlay.style.left = '0';
+                    svgOverlay.style.width = '100%';
+                    svgOverlay.style.height = '100%';
+                    svgOverlay.style.pointerEvents = 'none';
+                    svgOverlay.style.zIndex = '1';
+                    
+                    lines.forEach(line => {
+                        try {
+                            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            const lineElement = line.element;
+                            if (lineElement) {
+                                const pathData = lineElement.getAttribute('d');
+                                if (pathData) {
+                                    path.setAttribute('d', pathData);
+                                    path.setAttribute('stroke', line.color);
+                                    path.setAttribute('stroke-width', line.size);
+                                    path.setAttribute('fill', 'none');
+                                    path.setAttribute('stroke-linecap', 'round');
+                                    path.setAttribute('stroke-linejoin', 'round');
+                                    svgOverlay.appendChild(path);
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Could not export line:', e);
+                        }
+                    });
+                    
+                    tempContainer.appendChild(svgOverlay);
+                    document.body.appendChild(tempContainer);
+                    
+                    const canvasImage = await html2canvas(tempContainer, {
+                        backgroundColor: document.documentElement.classList.contains('dark') ? '#020617' : '#f1f5f9',
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        foreignObjectRendering: true,
+                        width: tempContainer.offsetWidth,
+                        height: tempContainer.offsetHeight
+                    });
+                    
+                    document.body.removeChild(tempContainer);
+                    
+                    const imgData = canvasImage.toDataURL('image/png');
+                    const imgWidth = 297; // A4 width in mm
+                    const pageHeight = 210; // A4 height in mm
+                    const imgHeight = canvasImage.height * imgWidth / canvasImage.width;
+                    let heightLeft = imgHeight;
+                    
+                    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
+                    let position = 0;
+                    
+                    doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                    
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        doc.addPage();
+                        doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    
+                    doc.save(`${currentData.title || 'roadmap'}.pdf`.replace(/[^a-z0-9]/gi, '_'));
+                    showToast('PDF exported successfully!');
+                } catch(err) {
+                    showToast('Error exporting PDF. Please try again.');
+                    console.error('Export error:', err);
+                } finally {
+                    hideExportOverlay();
+                    restoreCanvasAfterExport();
+                }
+            });
+
+            // Initialize mobile view
+            if (isMobile()) {
+                sidebar.classList.add('hidden');
+            }
 
             // Initial render
             renderRoadmap();
@@ -510,4 +851,3 @@
     </script>
 </body>
 </html>
-
