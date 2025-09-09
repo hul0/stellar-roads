@@ -95,47 +95,47 @@
             </div>
         </header>
 
-        <main class="flex flex-1 overflow-hidden">
+        <main class="flex flex-col md:flex-row flex-1 overflow-hidden">
             <!-- Sidebar for JSON input -->
-            <aside class="w-1/3 max-w-md p-4 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto">
-                <h2 class="text-lg font-semibold mb-2">Roadmap JSON</h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Paste your roadmap configuration below. You can use the sample data to get started.</p>
-                <textarea id="json-input" class="w-full h-2/3 flex-grow p-3 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm font-mono" spellcheck="false"></textarea>
-                <div class="flex items-center gap-2 mt-4">
-                    <button id="render-btn" class="flex-1 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-900">
-                        Generate Roadmap
-                    </button>
-                    <button id="sample-data-btn" class="text-indigo-600 dark:text-indigo-400 font-semibold py-2 px-4 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/50 transition-colors">
-                        Sample
-                    </button>
-                     <button id="copy-json-btn" class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Copy JSON">
-                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25h-1.5a2.25 2.25 0 01-2.25-2.25v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
+            <aside class="w-full md:w-1/3 md:max-w-md p-4 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-lg font-semibold">Roadmap JSON</h2>
+                    <button id="sidebar-toggle" class="md:hidden p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
                     </button>
                 </div>
-                <div id="json-error" class="mt-3 text-red-500 text-sm"></div>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Paste your roadmap configuration below. You can use the sample data to get started.</p>
+                <div id="sidebar-content">
+                    <textarea id="json-input" class="w-full h-48 md:h-2/3 flex-grow p-3 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm font-mono" spellcheck="false"></textarea>
+                    <div class="flex items-center gap-2 mt-4">
+                        <button id="render-btn" class="flex-1 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-900">
+                            Generate Roadmap
+                        </button>
+                        <button id="sample-data-btn" class="text-indigo-600 dark:text-indigo-400 font-semibold py-2 px-4 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/50 transition-colors">
+                            Sample
+                        </button>
+                         <button id="copy-json-btn" class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Copy JSON">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25h-1.5a2.25 2.25 0 01-2.25-2.25v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
+                        </button>
+                    </div>
+                    <div id="json-error" class="mt-3 text-red-500 text-sm"></div>
 
-                <!-- Export Controls -->
-                <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
-                    <h3 class="text-lg font-semibold mb-4">Export Options</h3>
-                    <div class="grid grid-cols-1 gap-3">
-                         <button id="export-png-btn" class="export-btn">Download as PNG</button>
-                         <button id="export-svg-btn" class="export-btn">Download as SVG</button>
-                         <button id="export-pdf-btn" class="export-btn">Download as PDF</button>
+                    <!-- Export Controls -->
+                    <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+                        <h3 class="text-lg font-semibold mb-4">Export Options</h3>
+                        <div class="grid grid-cols-1 gap-3">
+                             <button id="export-png-btn" class="export-btn">Download as PNG</button>
+                             <button id="export-svg-btn" class="export-btn">Download as SVG</button>
+                             <button id="export-pdf-btn" class="export-btn">Download as PDF</button>
+                        </div>
                     </div>
                 </div>
             </aside>
 
             <!-- Roadmap Canvas -->
-            <div id="canvas-container" class="flex-1 bg-grid-slate-200/50 dark:bg-grid-slate-700/20 relative overflow-hidden">
-                <div id="canvas" class="w-full h-full">
-                    <!-- Roadmap will be rendered here -->
-                </div>
-                <!-- Zoom Controls -->
-                <div class="absolute bottom-4 right-4 flex items-center gap-2 p-1 rounded-lg glassmorphism">
-                     <button id="zoom-in-btn" class="zoom-btn">+</button>
-                     <button id="zoom-out-btn" class="zoom-btn">-</button>
-                     <button id="zoom-reset-btn" class="zoom-btn">
-                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10.5a.5.5 0 01.5-.5h3a.5.5 0 010 1h-3a.5.5 0 01-.5-.5z" clip-rule="evenodd" fill-rule="evenodd"/></svg>
+            <div id="canvas-container" class="flex-1 bg-grid-slate-200/50 dark:bg-grid-slate-700/20 relative overflow-hidden h-full">
                      </button>
                 </div>
             </div>
@@ -178,6 +178,8 @@
             const canvasContainer = document.getElementById('canvas-container');
             const toast = document.getElementById('toast');
             const toastMessage = document.getElementById('toast-message');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const sidebarContent = document.getElementById('sidebar-content');
 
             const exportPngBtn = document.getElementById('export-png-btn');
             const exportSvgBtn = document.getElementById('export-svg-btn');
@@ -190,6 +192,19 @@
             let lines = [];
             let panzoomInstance;
 
+            // --- Utility ---
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+
             // --- Theme Manager ---
             const applyTheme = (isDark) => {
                 if (isDark) {
@@ -201,7 +216,8 @@
                     themeIconLight.classList.add('hidden');
                     themeIconDark.classList.remove('hidden');
                 }
-                 updateLines();
+                 // Lines are very sensitive to theme changes, small delay ensures DOM is updated.
+                 setTimeout(updateLines, 50);
             };
 
             themeToggle.addEventListener('click', () => {
@@ -213,6 +229,12 @@
             // --- Initial Setup ---
             const initialTheme = localStorage.getItem('theme') === 'dark';
             applyTheme(initialTheme);
+            
+            // --- Sidebar Toggle for Mobile ---
+            sidebarToggle.addEventListener('click', () => {
+                sidebarContent.classList.toggle('hidden');
+                setTimeout(updateLines, 300); // Update lines after animation
+            });
             
             // --- Sample Data ---
             const sampleJSON = {
@@ -271,7 +293,7 @@
                     return;
                 }
                 
-                if (!data.nodes || !data.dependencies) {
+                if (!data.nodes || !Array.isArray(data.nodes) || !data.dependencies || !Array.isArray(data.dependencies)) {
                      jsonError.textContent = 'JSON must contain "nodes" and "dependencies" arrays.';
                      return;
                 }
@@ -288,14 +310,14 @@
                 // Render nodes
                 Object.keys(levels).sort((a,b) => a-b).forEach((level, levelIndex) => {
                     const levelContainer = document.createElement('div');
-                    levelContainer.className = 'flex justify-center items-start gap-8 p-10';
+                    levelContainer.className = 'flex flex-col md:flex-row justify-center items-center md:items-start gap-8 p-6 md:p-10';
                     levelContainer.style.animationDelay = `${levelIndex * 100}ms`;
                     levelContainer.classList.add('fade-in');
 
                     levels[level].forEach(nodeData => {
                         const nodeEl = document.createElement('div');
                         nodeEl.id = nodeData.id;
-                        nodeEl.className = 'node w-64 p-5 rounded-xl shadow-lg cursor-pointer flex flex-col gap-2 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark';
+                        nodeEl.className = 'node w-full max-w-xs sm:w-64 p-5 rounded-xl shadow-lg cursor-pointer flex flex-col gap-2 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark';
                         
                         const statusColor = `status-${nodeData.status || 'planned'}`;
                         nodeEl.innerHTML = `
@@ -393,7 +415,7 @@
                 canvas.addEventListener('pan', updateLines);
                 canvas.addEventListener('zoom', updateLines);
             }
-            window.addEventListener('resize', updateLines);
+            window.addEventListener('resize', debounce(updateLines, 150));
 
             // Zoom controls
             zoomInBtn.addEventListener('click', () => panzoomInstance?.zoomIn());
@@ -517,3 +539,4 @@
     </script>
 </body>
 </html>
+
